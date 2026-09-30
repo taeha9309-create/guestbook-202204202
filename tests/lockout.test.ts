@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { api, cleanup, createEntry, newRequester } from "./client";
+import { api, canSimulateRequesters, cleanup, createEntry, newRequester } from "./client";
 
 afterAll(cleanup);
 
@@ -9,7 +9,7 @@ async function failTimes(id: number, requester: string, n: number) {
   return last!;
 }
 
-describe("잠금", () => {
+describe.skipIf(!canSimulateRequesters)("잠금", () => {
   it("5번째 실패 순간 20분간 잠긴다", async () => {
     const entry = await createEntry();
     const res = await failTimes(entry.id, newRequester(), 5);

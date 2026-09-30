@@ -1,9 +1,9 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { api, cleanup, createEntry, newRequester } from "./client";
+import { api, canSimulateRequesters, cleanup, createEntry, newRequester } from "./client";
 
 afterAll(cleanup);
 
-describe("실패 시도와 남은 시도", () => {
+describe.skipIf(!canSimulateRequesters)("실패 시도와 남은 시도", () => {
   it("틀린 글 비밀번호로 수정하면 남은 시도가 안내된다", async () => {
     const entry = await createEntry();
     const me = newRequester();

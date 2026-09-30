@@ -1,6 +1,12 @@
 // HTTP API 테스트용 클라이언트. 대상 주소는 API_BASE_URL (기본: 로컬 개발 서버).
 export const BASE = process.env.API_BASE_URL ?? "http://localhost:3123";
 
+/**
+ * 요청자는 x-forwarded-for로 흉내 낸다. Vercel은 이 헤더를 실제 클라이언트 IP로 덮어쓰므로
+ * 배포 환경에서는 요청자를 흉내 낼 수 없다(= 위조 불가). 요청자에 의존하는 테스트는 로컬에서만 돈다.
+ */
+export const canSimulateRequesters = /localhost|127\.0\.0\.1/.test(BASE);
+
 type Json = Record<string, unknown>;
 
 let seq = 0;
