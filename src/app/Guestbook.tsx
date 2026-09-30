@@ -10,7 +10,26 @@ type Entry = {
   updated_at: string | null;
 };
 
-type Mode = { id: number; kind: "edit" | "delete" } | null;
+type Action = "edit" | "delete";
+type Mode = { id: number; kind: Action } | null;
+
+/** 수정·삭제 동작별 요청 방식과 화면 문구. */
+const ACTIONS: Record<Action, { method: string; hint: string; confirm: string; done: string; color: string }> = {
+  edit: {
+    method: "PATCH",
+    hint: "글 비밀번호를 입력하고 수정을 완료하세요.",
+    confirm: "수정 완료",
+    done: "글이 수정되었습니다",
+    color: "bg-indigo-500 hover:bg-indigo-600",
+  },
+  delete: {
+    method: "DELETE",
+    hint: "글 비밀번호를 입력하면 이 글이 완전히 삭제됩니다.",
+    confirm: "삭제 확인",
+    done: "글이 삭제되었습니다",
+    color: "bg-red-500 hover:bg-red-600",
+  },
+};
 
 const input =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100";
@@ -154,7 +173,7 @@ export default function Guestbook() {
     }
   }
 
-  function open(entry: Entry, kind: "edit" | "delete") {
+  function open(entry: Entry, kind: Action) {
     setMode({ id: entry.id, kind });
     setEditText(entry.message);
     setActionPw("");
@@ -168,7 +187,7 @@ export default function Guestbook() {
     setActionError("");
     try {
       const res = await fetch(`/api/entries/${entry.id}`, {
-        method: kind === "edit" ? "PATCH" : "DELETE",
+        method: ACTIONS[kind].method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(kind === "edit" ? { message: editText, password: actionPw } : { password: actionPw }),
       });
@@ -179,7 +198,7 @@ export default function Guestbook() {
       }
       setMode(null);
       await load();
-      showToast(kind === "edit" ? "글이 수정되었습니다" : "글이 삭제되었습니다");
+      showToast(ACTIONS[kind].done);
     } catch {
       setActionError("요청에 실패했습니다.");
     } finally {
@@ -292,7 +311,7 @@ export default function Guestbook() {
                     {active && (
                       <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3">
                         <p className="text-xs font-medium text-slate-500">
-                          {active.kind === "edit" ? "글 비밀번호를 입력하고 수정을 완료하세요." : "글 비밀번호를 입력하면 이 글이 완전히 삭제됩니다."}
+                          {ACTIONS[active.kind].hint}
                         </p>
                         <input
                           className={input}
@@ -311,11 +330,11 @@ export default function Guestbook() {
                           </button>
                           <button
                             type="button"
-                            className={`${btn} text-white ${active.kind === "edit" ? "bg-indigo-500 hover:bg-indigo-600" : "bg-red-500 hover:bg-red-600"}`}
+                            className={`${btn} text-white ${ACTIONS[active.kind].color}`}
                             disabled={acting || !actionPw}
                             onClick={() => confirm(entry)}
                           >
-                            {acting ? "처리 중..." : active.kind === "edit" ? "수정 완료" : "삭제 확인"}
+                            {acting ? "처리 중..." : ACTIONS[active.kind].confirm}
                           </button>
                         </div>
                       </div>

@@ -14,12 +14,12 @@ export function getSql() {
   return neon(url);
 }
 
-let ready: Promise<unknown> | null = null;
+let schemaReady: Promise<unknown> | null = null;
 
 export function ensureTable() {
-  if (!ready) {
+  if (!schemaReady) {
     const sql = getSql();
-    ready = (async () => {
+    schemaReady = (async () => {
       await sql`
         CREATE TABLE IF NOT EXISTS entries (
           id SERIAL PRIMARY KEY,
@@ -39,17 +39,11 @@ export function ensureTable() {
           PRIMARY KEY (entry_id, requester)
         )`;
     })().catch((e) => {
-      ready = null;
+      schemaReady = null;
       throw e;
     });
   }
-  return ready;
-}
-
-/** 요청자(IP) 식별: Vercel이 설정하는 x-forwarded-for의 첫 값. ADR-0001 참고. */
-export function requesterOf(req: Request) {
-  const fwd = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return fwd || req.headers.get("x-real-ip")?.trim() || "unknown";
+  return schemaReady;
 }
 
 export function validText(v: unknown, min: number, max: number): v is string {

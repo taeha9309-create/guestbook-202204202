@@ -9,6 +9,10 @@ export const canSimulateRequesters = /localhost|127\.0\.0\.1/.test(BASE);
 
 type Json = Record<string, unknown>;
 
+/** 테스트 글의 글 비밀번호와, 일부러 틀리는 글 비밀번호. */
+export const PASSWORD = "pw1234";
+export const WRONG_PASSWORD = "wrong!";
+
 let seq = 0;
 /** 테스트마다 서로 다른 요청자(IP)를 흉내 낸다. */
 export function newRequester() {
@@ -39,7 +43,7 @@ const created: { id: number; password: string }[] = [];
 
 /** 글을 하나 남기고, 테스트 종료 시 지울 수 있게 기억해 둔다. */
 export async function createEntry(overrides: Json = {}) {
-  const password = (overrides.password as string) ?? "pw1234";
+  const password = (overrides.password as string) ?? PASSWORD;
   const body = { name: "테스트", message: `test-${Date.now()}`, password, ...overrides };
   const res = await api.create(body);
   if (res.status !== 201) throw new Error(`create failed: ${res.status} ${JSON.stringify(res.data)}`);
@@ -53,4 +57,11 @@ export async function cleanup() {
     const e = created.pop()!;
     await api.remove(e.id, { password: e.password }, newRequester());
   }
+}
+
+/** 한 요청자가 한 글에 틀린 글 비밀번호로 수정을 n번 순서대로 시도하고, 마지막 응답을 돌려준다. */
+export async function failTimes(id: number, requester: string, n: number) {
+  let last;
+  for (let i = 0; i < n; i++) last = await api.edit(id, { message: "x", password: WRONG_PASSWORD }, requester);
+  return last!;
 }
